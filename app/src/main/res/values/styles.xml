@@ -11,7 +11,7 @@
 
     <style name="AppThemePhoto" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/blue_blur</item>
-        <item name="colorPrimaryDark">@color/blue</item>
+        <item name="colorPrimaryDark">@color/blue_blur</item>
         <item name="colorAccent">@color/blue</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>

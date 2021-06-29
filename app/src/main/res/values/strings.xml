@@ -16,4 +16,6 @@
     <string name="delete_dialog">Delete current photo?</string>
     <string name="delete_title">Confirm</string>
     <string name="photo_review">Review</string>
+    <string name="photo_gallery">Photo Gallery</string>
+    <string name="photo_gallery_selected">selected</string>
 </resources>

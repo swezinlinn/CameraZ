@@ -3,37 +3,34 @@ package mm.com.zin.cameraz;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraX;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageAnalysisConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureConfig;
-import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.core.PreviewConfig;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.LifecycleOwner;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Rational;
 import android.util.Size;
 import android.graphics.Matrix;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import android.os.Bundle;
 import android.view.Surface;
@@ -41,6 +38,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -55,12 +53,16 @@ import pub.devrel.easypermissions.PermissionRequest;
 
 public class CameraActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks{
 
-    private final int REQUEST_CODE_PERMISSIONS = 10;
+    private final int REQUEST_CODE_PERMISSIONS_CAMERA = 10;
+    public static final int REQUEST_CODE_PERMISSIONS_STORAGE = 100;
+
     private static final String TAG = "CameraZApp";
     private CameraX.LensFacing lensFacing = CameraX.LensFacing.BACK;
     int EDITED_IMAGE_RESULT_CODE= 200;
 
-    private String[] REQUIRED_PERMISSIONS = new String[] {Manifest.permission.CAMERA};
+    private final String[] REQUIRED_PERMISSIONS_CAMERA = {Manifest.permission.CAMERA};
+    public static final String[] REQUIRED_PERMISSIONS_GALLERY = {Manifest.permission.READ_EXTERNAL_STORAGE,};
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,11 +82,19 @@ public class CameraActivity extends AppCompatActivity implements EasyPermissions
                 updateTransform();
             }
         });
+
+        ImageView imgGallery  = findViewById(R.id.photo_view_button);
+        imgGallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestGalleryPermission();
+            }
+        });
     }
 
     private TextureView viewFinder;
 
-    private Runnable startCamera = new Runnable() {
+    private final Runnable startCamera = new Runnable() {
         @Override
         public void run() {
             CameraX.unbindAll();
@@ -143,18 +153,18 @@ public class CameraActivity extends AppCompatActivity implements EasyPermissions
                         Uri photoURI = FileProvider.getUriForFile(getApplicationContext(),
                                 BuildConfig.APPLICATION_ID+".provider",
                                 file);
+                        Log.d("URI","image uri-camera--."+photoURI);
 
                         // navigating to edit activity after capturing image from camera
                         Intent dsPhotoEditorIntent = new Intent(CameraActivity.this, DsPhotoEditorActivity.class);
                         dsPhotoEditorIntent.setData(photoURI);
 
                         // directory for edited images
-                        dsPhotoEditorIntent.putExtra(DsPhotoEditorConstants.DS_PHOTO_EDITOR_OUTPUT_DIRECTORY, "picaso");
+                        dsPhotoEditorIntent.putExtra(DsPhotoEditorConstants.DS_PHOTO_EDITOR_OUTPUT_DIRECTORY, "CameraZ");
 
                         int[] toolsToHide = {DsPhotoEditorActivity.TOOL_ORIENTATION, DsPhotoEditorActivity.TOOL_CROP};
                         dsPhotoEditorIntent.putExtra(DsPhotoEditorConstants.DS_PHOTO_EDITOR_TOOLS_TO_HIDE, toolsToHide);
                         startActivityForResult(dsPhotoEditorIntent, EDITED_IMAGE_RESULT_CODE);
-
 
                     }
                 });
@@ -207,6 +217,12 @@ public class CameraActivity extends AppCompatActivity implements EasyPermissions
         switchButton.setEnabled(true);
     }
 
+    public Uri getImageUri(Bitmap bitmap){
+        ByteArrayOutputStream byteArrayOutputStream= new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        String path= MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Title", "Desc");
+        return Uri.parse(path);
+    }
 
     private void setGalleryThumbnail(Uri uri) {
         // Reference of the view that holds the gallery thumbnail
@@ -282,8 +298,14 @@ public class CameraActivity extends AppCompatActivity implements EasyPermissions
 
     @Override
     public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
-        viewFinder.post(startCamera);
-        updateCameraSwitchButton();
+        if(requestCode == REQUEST_CODE_PERMISSIONS_CAMERA) {
+
+            viewFinder.post(startCamera);
+            updateCameraSwitchButton();
+        }else {
+            Intent i = new Intent(this, PhotoGalleryActivity.class);
+            startActivity(i);
+        }
     }
 
     @Override
@@ -294,8 +316,16 @@ public class CameraActivity extends AppCompatActivity implements EasyPermissions
     }
 
     private void requestCameraPermission() {
-        int REQUEST_CODE_PERMISSIONS = 10;
-        EasyPermissions.requestPermissions(new PermissionRequest.Builder(this, REQUEST_CODE_PERMISSIONS, REQUIRED_PERMISSIONS)
+        EasyPermissions.requestPermissions(new PermissionRequest.Builder(this, REQUEST_CODE_PERMISSIONS_CAMERA, REQUIRED_PERMISSIONS_CAMERA)
+                .setRationale(getResources().getString(R.string.persmission_request))
+                .setPositiveButtonText(R.string.ok)
+                .setNegativeButtonText(R.string.cancel)
+                .build());
+
+    }
+
+    private void requestGalleryPermission() {
+        EasyPermissions.requestPermissions(new PermissionRequest.Builder(this, REQUEST_CODE_PERMISSIONS_STORAGE, REQUIRED_PERMISSIONS_GALLERY)
                 .setRationale(getResources().getString(R.string.persmission_request))
                 .setPositiveButtonText(R.string.ok)
                 .setNegativeButtonText(R.string.cancel)

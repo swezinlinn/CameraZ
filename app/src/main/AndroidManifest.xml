@@ -17,6 +17,7 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <application
         tools:ignore="AllowBackup"
@@ -68,7 +69,10 @@
         </activity>
         <activity android:name=".ResultActivity"
             android:theme="@style/AppThemePhoto" />
-
+        <activity android:name=".GalleryActivity"
+            android:theme="@style/AppThemePhoto" />
+        <activity android:name=".PhotoGalleryActivity"
+            android:theme="@style/AppThemePhoto" />
         <activity
 
             android:name="com.dsphotoeditor.sdk.activity.DsPhotoEditorActivity"
